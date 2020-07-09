@@ -34,11 +34,17 @@ typedef struct _GlutWindowClass
   GObjectClass parent;
 
   void (*on_display) (GlutWindow *);
+
+  /* Actions */
+  void (*open) (GlutWindow *);
+  void (*close) (GlutWindow *);
 } GlutWindowClass;
 
 enum
 {
   SIGNAL_ON_DISPLAY,
+  SIGNAL_OPEN,
+  SIGNAL_CLOSE,
   LAST_SIGNAL
 };
 
@@ -218,12 +224,29 @@ glut_window_class_init (GlutWindowClass * klass)
       G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GlutWindowClass, on_display), NULL, NULL,
       g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
+
+  glut_window_signals[SIGNAL_OPEN] =
+      g_signal_new ("open", G_TYPE_FROM_CLASS (klass),
+          G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+          G_STRUCT_OFFSET (GlutWindowClass, open), NULL, NULL,
+          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
+
+  glut_window_signals[SIGNAL_CLOSE] =
+      g_signal_new ("close", G_TYPE_FROM_CLASS (klass),
+          G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+          G_STRUCT_OFFSET (GlutWindowClass, close), NULL, NULL,
+          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
 }
 
 static void
 glut_window_init (GlutWindow * self)
 {
   global_self = self;
+
+  g_signal_connect (self, "open",
+      G_CALLBACK (glut_window_open), NULL);
+  g_signal_connect (self, "close",
+      G_CALLBACK (glut_window_close), NULL);
 }
 
 

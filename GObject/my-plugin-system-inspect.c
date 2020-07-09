@@ -93,6 +93,16 @@ main (int argc, char **argv)
         g_printf (");\n");
       }
 
+      for (;;) {
+        char a[512];
+        printf ("(q to quit), execute action\n");
+        if (!scanf ("%s", &a) || !g_strcmp0 (a, "q"))
+          break;
+
+        printf ("action: %s\n", a);
+        g_signal_emit_by_name (obj, a, NULL);
+      }
+
       g_object_unref (obj);
       g_free (properties);
       g_free (signals);
