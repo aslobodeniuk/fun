@@ -8,8 +8,8 @@
 #include <glib-object.h>
 #include "GL/freeglut.h"
 #include "GL/gl.h"
-
-//#define MY_GLUT_WINDOW glut_window_get_type ()
+#include "my-plugin-system.h"
+#include <glib/gstdio.h>
 
 /* ======================= Instance */
 typedef struct _GlutWindow
@@ -106,7 +106,7 @@ static void
 glut_window_set_property (GObject * object,
     guint property_id, const GValue * value, GParamSpec * pspec)
 {
-  GlutWindow *self = (GlutWindow *)object;
+  GlutWindow *self = (GlutWindow *) object;
 
   switch ((GlutWindowProperty) property_id) {
     case PROP_TITLE:
@@ -141,7 +141,7 @@ static void
 glut_window_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec)
 {
-  GlutWindow *self = (GlutWindow *)object;
+  GlutWindow *self = (GlutWindow *) object;
 
   switch ((GlutWindowProperty) property_id) {
     case PROP_TITLE:
@@ -235,3 +235,4 @@ glut_window_dispose (GlutWindow * self)
 
 
 G_DEFINE_TYPE (GlutWindow, glut_window, G_TYPE_OBJECT)
+MY_PLUGIN_SYSTEM_PROVIDE_GTYPE (glut_window);
