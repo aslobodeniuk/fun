@@ -44,6 +44,7 @@ main (int argc, char **argv)
       GObject *obj;
       GParamSpec **properties;
       guint n_properties, p;
+      guint *signals, s, n_signals;
 
       g_printf ("GType is a GObject.\n");
 
@@ -56,19 +57,45 @@ main (int argc, char **argv)
       for (p = 0; p < n_properties; p++) {
         GParamSpec *prop = properties[p];
         gchar *def_val;
-
-        g_printf ("* Property: '%s', '%s', '%s'\n",
-            g_param_spec_get_blurb (prop),
-            g_param_spec_get_nick (prop), g_param_spec_get_name (prop));
+        GType param_val_type;
 
         def_val =
             g_strdup_value_contents (g_param_spec_get_default_value (prop));
-        g_printf ("\tDefault value: %s\n", def_val);
+
+        g_printf ("- Property: (%s) %s = %s\n",
+            G_PARAM_SPEC_TYPE_NAME (prop),
+            g_param_spec_get_name (prop), def_val);
+
+        g_printf ("\tnick = '%s', %s\n\n",
+            g_param_spec_get_nick (prop), g_param_spec_get_blurb (prop));
         g_free (def_val);
+      }
+
+
+      signals = g_signal_list_ids (plugin_type, &n_signals);
+
+      for (s = 0; s < n_signals; s++) {
+        GSignalQuery query;
+        GTypeQuery ret_query;
+        guint n_params;
+
+        g_signal_query (signals[s], &query);
+        g_type_query (query.return_type, &ret_query);
+
+        g_printf ("- Signal: (* %s) ", query.signal_name);
+
+        g_printf ("(");
+        for (p = 0; p < query.n_params; p++) {
+          GTypeQuery pquery;
+          g_type_query (query.param_types[p], &pquery);
+          g_printf ("%s%s", p ? ", " : "", pquery.type_name);
+        }
+        g_printf (");\n");
       }
 
       g_object_unref (obj);
       g_free (properties);
+      g_free (signals);
     }
   }
 
