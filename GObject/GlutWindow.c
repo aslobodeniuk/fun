@@ -1,6 +1,5 @@
 /* Compilation:
-   gcc -fpic -c GlutWindow.c -lglut -lGL $(pkg-config --cflags --libs gobject-2.0) -o GlutWindow.o 
-   gcc -shared GlutWindow.o -fpic -o GlutWindow.so -lglut -lGL $(pkg-config --cflags --libs gobject-2.0)
+   gcc -fpic -shared -lglut -lGL $(pkg-config --cflags --libs gobject-2.0) GlutWindow.c -o GlutWindow.so
 */
 
 /* https://www.linuxjournal.com/content/introduction-opengl-programming */
@@ -170,6 +169,25 @@ glut_window_get_property (GObject * object,
   }
 }
 
+static void
+glut_window_init (GlutWindow * self)
+{
+  global_self = self;
+
+  g_signal_connect (self, "open",
+      G_CALLBACK (glut_window_open), NULL);
+  g_signal_connect (self, "close",
+      G_CALLBACK (glut_window_close), NULL);
+}
+
+
+static void
+glut_window_dispose (GObject *gobject)
+{
+  GlutWindow *self = (GlutWindow *) gobject;
+
+  glut_window_close (self);
+}
 
 /* =================== CLASS */
 
@@ -178,6 +196,7 @@ glut_window_class_init (GlutWindowClass * klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->dispose = glut_window_dispose;
   object_class->set_property = glut_window_set_property;
   object_class->get_property = glut_window_get_property;
 
@@ -236,24 +255,6 @@ glut_window_class_init (GlutWindowClass * klass)
           G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
           G_STRUCT_OFFSET (GlutWindowClass, close), NULL, NULL,
           g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
-}
-
-static void
-glut_window_init (GlutWindow * self)
-{
-  global_self = self;
-
-  g_signal_connect (self, "open",
-      G_CALLBACK (glut_window_open), NULL);
-  g_signal_connect (self, "close",
-      G_CALLBACK (glut_window_close), NULL);
-}
-
-
-static void
-glut_window_dispose (GlutWindow * self)
-{
-  glut_window_close (self);
 }
 
 

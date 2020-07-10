@@ -95,12 +95,15 @@ main (int argc, char **argv)
 
       for (;;) {
         char a[512];
-        printf ("(q to quit), execute action\n");
-        if (!scanf ("%s", &a) || !g_strcmp0 (a, "q"))
+        char n[512];
+        printf ("(q to quit), (call <signal>), (set <parameter>)\n");
+        if (!scanf ("%s %s", &a, &n) || !g_strcmp0 (a, "q"))
           break;
 
-        printf ("action: %s\n", a);
-        g_signal_emit_by_name (obj, a, NULL);
+        if (!g_strcmp0 (a, "call")) {
+          printf ("calling %s\n", n);
+          g_signal_emit_by_name (obj, n, NULL);
+        }
       }
 
       g_object_unref (obj);
