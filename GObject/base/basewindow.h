@@ -28,13 +28,17 @@ typedef struct _BaseWindowClass
 {
   GObjectClass parent;
 
+  /* Virtual methods for subclass to override*/
+  void (*redraw_start) (BaseWindow *);
+  void (*redraw_end) (BaseWindow *);
+  
+  /* Events */
   void (*on_display) (BaseWindow *);
 
   /* Actions */
   void (*open) (BaseWindow *);
   void (*close) (BaseWindow *);
-  
-  void (*add_drawable) (GObject *);
+  void (*redraw) (BaseWindow *);
 
 } BaseWindowClass;
 

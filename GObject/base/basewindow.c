@@ -5,6 +5,7 @@ enum
   SIGNAL_ON_DISPLAY,
   SIGNAL_OPEN,
   SIGNAL_CLOSE,
+  SIGNAL_REDRAW,
   LAST_SIGNAL
 };
 
@@ -27,6 +28,16 @@ void base_window_on_display (BaseWindow * self) {
   /* Chain up to user */
   g_signal_emit (self, base_window_signals[SIGNAL_ON_DISPLAY], 0);
 }
+
+
+void base_window_redraw (BaseWindow * self) {
+  BaseWindowClass *klass = BASE_WINDOW_GET_CLASS (self);
+
+  klass->redraw_start (self);
+  g_signal_emit (self, base_window_signals[SIGNAL_REDRAW], 0);
+  klass->redraw_end (self);
+}
+
 
 static void
 base_window_set_property (GObject * object,
@@ -101,24 +112,6 @@ base_window_get_property (GObject * object,
 static void
 base_window_init (BaseWindow * self)
 {
-  BaseWindowClass *klass = BASE_WINDOW_GET_CLASS (self);
-
-  /*
-  g_printf ("hello!!!!! %p\n", klass);
-  if (klass->open) {
-    g_printf ("overrida!!!!!\n");
-    g_signal_connect (self, "open",
-        G_CALLBACK (klass->open), NULL);
-  }
-
-  if (klass->close) {
-    g_signal_connect (self, "close",
-        G_CALLBACK (klass->close), NULL);
-  }
-
-  */
-//  g_signal_connect (self, "add-drawable",
-//      G_CALLBACK (base_window_add_drawable), NULL);
 }
 
 
@@ -198,6 +191,13 @@ base_window_class_init (BaseWindowClass * klass)
           G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
           G_STRUCT_OFFSET (BaseWindowClass, close), NULL, NULL,
           g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
+
+  base_window_signals[SIGNAL_REDRAW] =
+      g_signal_new ("redraw", G_TYPE_FROM_CLASS (klass),
+          G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+          G_STRUCT_OFFSET (BaseWindowClass, redraw), NULL, NULL,
+          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
+  
 }
 
 
