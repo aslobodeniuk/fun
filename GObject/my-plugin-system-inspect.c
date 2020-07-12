@@ -5,6 +5,22 @@
 #include "my-plugin-system.h"
 #include <glib/gstdio.h>
 #include <gmodule.h>
+#include <string.h>
+#include <stdlib.h>
+
+void _strtoint (const GValue *src_value,
+                    GValue *dest_value)
+{
+  guint ret = 0;
+  const gchar * s = g_value_get_string (src_value);
+
+  if (s) {
+    ret = atoi (s);
+  } else
+    g_warning ("couldn't convert string %s to uint", s);
+
+  g_value_set_uint (dest_value, ret);
+}
 
 int
 main (int argc, char **argv)
@@ -14,6 +30,10 @@ main (int argc, char **argv)
   MyPluginSystemGetGtypeFunc get_type_f;
   int ret = 1;
 
+  g_value_register_transform_func (G_TYPE_STRING,
+      G_TYPE_UINT,
+      _strtoint);
+  
   if (argc != 2) {
     g_printf ("my-plugin-system-inspect <plugin>");
     return 1;
@@ -57,7 +77,6 @@ main (int argc, char **argv)
       for (p = 0; p < n_properties; p++) {
         GParamSpec *prop = properties[p];
         gchar *def_val;
-        GType param_val_type;
 
         def_val =
             g_strdup_value_contents (g_param_spec_get_default_value (prop));
@@ -72,43 +91,90 @@ main (int argc, char **argv)
       }
 
 
-      signals = g_signal_list_ids (plugin_type, &n_signals);
+      /* Iterate signals */
+      {
+        GType t;
+        const gchar *_tab = "  ";
+        gchar *tab = g_strdup (_tab);
+        g_printf ("--- Signals:\n");
+        for (t = plugin_type; t && t != G_TYPE_OBJECT; t = g_type_parent (t)) {
+          gchar *tmptab;
+          
+          signals = g_signal_list_ids (t, &n_signals);
 
-      for (s = 0; s < n_signals; s++) {
-        GSignalQuery query;
-        GTypeQuery ret_query;
-        guint n_params;
+          for (s = 0; s < n_signals; s++) {
+            GSignalQuery query;
+            GTypeQuery t_query;
 
-        g_signal_query (signals[s], &query);
-        g_type_query (query.return_type, &ret_query);
+            g_signal_query (signals[s], &query);
+            g_type_query (t, &t_query);
 
-        g_printf ("- Signal: (* %s) ", query.signal_name);
+            g_printf ("%s%s:: (* %s) ", tab, t_query.type_name, query.signal_name);
 
-        g_printf ("(");
-        for (p = 0; p < query.n_params; p++) {
-          GTypeQuery pquery;
-          g_type_query (query.param_types[p], &pquery);
-          g_printf ("%s%s", p ? ", " : "", pquery.type_name);
+            g_printf ("(");
+            for (p = 0; p < query.n_params; p++) {
+              GTypeQuery pquery;
+              g_type_query (query.param_types[p], &pquery);
+              g_printf ("%s%s", p ? ", " : "", pquery.type_name);
+            }
+            g_printf (");\n");
+          }
+
+          tmptab = tab;
+          tab = g_strdup_printf ("%s%s", _tab, tab);
+          g_free (tmptab);
+          g_free (signals);
         }
-        g_printf (");\n");
       }
 
+      g_printf ("--- Entering command shell...\n");
+
+      
       for (;;) {
         char a[512];
-        char n[512];
-        printf ("(q to quit), (call <signal>), (set <parameter>)\n");
-        if (!scanf ("%s %s", &a, &n) || !g_strcmp0 (a, "q"))
-          break;
+        char ** tokens;
+        g_printf ("(q to quit), (call <signal>), (set <parameter> <val>)\n\t# ");
+        fgets(a, sizeof(a), stdin);
+        a [strlen (a) - 1] = 0; 
 
-        if (!g_strcmp0 (a, "call")) {
-          printf ("calling %s\n", n);
-          g_signal_emit_by_name (obj, n, NULL);
+        g_printf ("a = %s\n", a);
+        
+        tokens = g_strsplit (a, " ", 0);
+
+         if (tokens && tokens [0] && !g_strcmp0 (tokens [0], "q"))
+          break;
+        
+        if (tokens && tokens [0] && tokens [1]) {
+          /* Call */
+          if (!g_strcmp0 (tokens [0], "call")) {
+            g_printf ("calling %s ()\n", tokens [1]);
+            g_signal_emit_by_name (obj, tokens [1], NULL);
+          }
+          
+          if (tokens [2] && !g_strcmp0 (tokens [0], "set")) {
+            GValue inp = G_VALUE_INIT;
+            GValue outp = G_VALUE_INIT;
+            uint set;
+            g_value_init (&inp, G_TYPE_STRING);
+            g_value_init (&outp, G_TYPE_UINT);
+
+            g_printf ("setting %s to %s\n", tokens [1], tokens [2]);
+            
+            g_value_set_string (&inp, tokens [2]);
+            g_value_transform (&inp, &outp);
+
+            set = g_value_get_uint (&outp);
+            
+            g_printf ("setting %s to %d\n", tokens [1], set);
+            g_object_set (obj, tokens [1], g_value_get_uint (&outp), NULL);
+          }
+          
+          g_strfreev (tokens);
         }
       }
 
       g_object_unref (obj);
       g_free (properties);
-      g_free (signals);
     }
   }
 
