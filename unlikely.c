@@ -18,6 +18,49 @@
  * Boston, MA 02110-1301, USA.
  */
 
+/* 
+ * Example of usage:
+ * --------------------------
+ * 1. get some big text file
+ * --------------------------
+ *
+ * $ GST_DEBUG=8 gst-inspect-1.0 2>big_log.txt
+ *
+ * $ ls -lah big_log.txt 
+ *   -rw-rw-r-- 1 sasha sasha 211M de març  28 00:14 big_log.txt
+ *
+ * --------------------------
+ * 2. compile with likelies
+ * --------------------------
+ *
+ * $ cc unlikely.c $(pkg-config --cflags --libs glib-2.0) -O6 -DWITH_G_LIKELY
+ *
+ * --------------------------
+ * 3. search for some word
+ * --------------------------
+ * $ ./a.out big_log.txt caps
+ * ....
+ *   Total time elapsed: 44782600 us
+ *
+ * --------------------------
+ * 4. compile without likelies
+ * --------------------------
+ *
+ * $ cc ~/Fun/fun/unlikely.c $(pkg-config --cflags --libs glib-2.0) -O6
+ *
+ * --------------------------
+ * 5. search for the same word
+ * --------------------------
+ * $ ./a.out big_log.txt caps
+ * ....
+ *   Total time elapsed: 50572310 us
+ *
+ * --------------------------
+ * 6. estimate the speedup: 50572310 / 44782600 = 1,129
+ *
+ * P.S. example was compiled with gcc 9.4.0
+ */
+
 #include <glib.h>
 
 static void
