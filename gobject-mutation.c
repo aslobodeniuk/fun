@@ -18,6 +18,50 @@
  * Boston, MA 02110-1301, USA.
  */
 
+/**
+ * Design concept:
+ * 
+ * We introduce one experimental approach that we call GObject Mutation,
+ * or GMO (G Mutated Object). It bases on the concept of Mutator.
+ * Mutator is a code that together with some parent can produce
+ * a child class, but Mutator is agnostic to what class is going
+ * to be the parent.
+ *
+ * In the following example code we decide to create a Mutant from
+ * the videotestsrc gstreamer element. It's inheritance tree looks like this:
+ *
+ * GObject
+ * +----GInitiallyUnowned
+ *      +----GstObject
+ *            +----GstElement
+ *                  +----GstBaseSrc
+ *                        +----GstPushSrc
+ *                              +----GstVideoTestSrc
+ *
+ * The Mutation is GstVideoTestSrc + OurMutator, this means that we are going to register
+ * one more class MyMutantClass, that will have the next inheritance tree:
+ *
+ * GObject
+ * +----GInitiallyUnowned
+ *      +----GstObject
+ *            +----GstElement
+ *                  +----GstBaseSrc
+ *                        +----GstPushSrc
+ *                              +----GstVideoTestSrc
+ *                                    +----MyMutantClass
+ *
+ * The only difference between GstVideoTestSrc and MyMutantClass is defined by
+ * the Mutator.
+ * Basically Mutator consists of the class_init function in which it can override the behaviour
+ * of some grandparent classes.
+ * In our example the Mutator doesn't care if the parent is going to be GstVideoTestSrc or any
+ * other GStreamer element, the only important thing for it that the parent is a GstElement,
+ * because this is the level on which it overrides the behaviour.
+ * 
+ * Having the result of the mutation - MyMutantClass, we register a new GStreamer element
+ * that is called "mutated_videotestsrc" and use it in the pipeline.
+ */
+
 
 /* Compiling:
  * Needs GStreamer development package
