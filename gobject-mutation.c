@@ -27,7 +27,7 @@
  * a child class, but Mutator is agnostic to what class is going
  * to be the parent.
  *
- * In the following example code we decide to create a Mutant from
+ * In the following example code we decide to create a mutant from
  * the videotestsrc gstreamer element. It's inheritance tree looks like this:
  *
  * GObject
@@ -161,26 +161,30 @@ main (int argc, char *argv[])
   GType mutated_dna_type;
   GstElement *pipe;
 
-  /* Register GStreamer's gtypes */
   gst_init (&argc, &argv);
 
-  gst_object_unref (gst_element_factory_make ("videotestsrc", NULL));
+  {                             /* Get the DNA type */
+    GstElementFactory *fac;
 
-  /* Fetch type of fakesrc element */
-  dna_type = g_type_from_name ("GstVideoTestSrc");
+    fac = GST_ELEMENT_FACTORY (gst_plugin_feature_load (GST_PLUGIN_FEATURE
+            (gst_element_factory_find ("videotestsrc"))));
+    dna_type = gst_element_factory_get_element_type (fac);
+    gst_object_unref (fac);
+  }
+
   if (0 == dna_type) {
     g_error ("Couldn't find DNA type");
   }
 
   mutated_dna_type = gmo_get_mutant_type (dna_type);
   if (0 == mutated_dna_type) {
-    g_error ("Couldn't register mutated type");
+    g_error ("Couldn't register mutant type");
   }
 
   /* Register our mutant as GstElement */
   if (!gst_element_register (NULL, "mutated_videotestsrc", 999,
           mutated_dna_type)) {
-    g_error ("Couldn't register plugin");
+    g_error ("Couldn't register mutant element");
   }
 
   pipe = gst_parse_launch ("mutated_videotestsrc ! autovideosink", NULL);
