@@ -22,9 +22,9 @@
  * Design concept:
  * 
  * We introduce one experimental approach that we call GObject Mutation,
- * or GMO (G Mutated Object). It bases on the concept of Mutator.
- * Mutator is a code that together with some parent can produce
- * a child class, but Mutator is agnostic to what class is going
+ * or GMO (G Mutated Object). It bases on the concept of Mutogene.
+ * Mutogene is a code that together with some parent can produce
+ * a child class, but Mutogene is agnostic to what class is going
  * to be the parent.
  *
  * In the following example code we decide to create a mutant from
@@ -38,7 +38,7 @@
  *                        +----GstPushSrc
  *                              +----GstVideoTestSrc
  *
- * The Mutation is GstVideoTestSrc + OurMutator, this means that we are going to register
+ * The Mutation is GstVideoTestSrc + OurMutogene, this means that we are going to register
  * one more class MyMutantClass, that will have the next inheritance tree:
  *
  * GObject
@@ -51,10 +51,10 @@
  *                                    +----MyMutantClass
  *
  * The only difference between GstVideoTestSrc and MyMutantClass is defined by
- * the Mutator.
- * Basically Mutator consists of the class_init function in which it can override the behaviour
+ * the Mutogene.
+ * Basically Mutogene consists of the class_init function in which it can override the behaviour
  * of some grandparent classes.
- * In our example the Mutator doesn't care if the parent is going to be GstVideoTestSrc or any
+ * In our example the Mutogene doesn't care if the parent is going to be GstVideoTestSrc or any
  * other GStreamer element, the only important thing for it that the parent is a GstElement,
  * because this is the level on which it overrides the behaviour.
  * 
@@ -74,31 +74,31 @@ GstElementClass *parent_class;
 typedef struct
 {
   int abc;
-} MutatorClass;
+} MutogeneClass;
 
 typedef struct
 {
   guint num;
-} Mutator;
+} Mutogene;
 
 static guint gmo_dna_class_offset;
 static guint gmo_dna_instance_offset;
-static MutatorClass *
+static MutogeneClass *
 gmo_get_class (gpointer class)
 {
-  return (MutatorClass *) (class + gmo_dna_class_offset);
+  return (MutogeneClass *) (class + gmo_dna_class_offset);
 }
 
-static Mutator *
-gmo_get_mutator (gpointer self)
+static Mutogene *
+gmo_get_mutogene (gpointer self)
 {
-  return (Mutator *) (self + gmo_dna_instance_offset);
+  return (Mutogene *) (self + gmo_dna_instance_offset);
 }
 
 static GstStateChangeReturn
 gmo_override_change_state (GstElement * element, GstStateChange transition)
 {
-  Mutator *mut = gmo_get_mutator (element);
+  Mutogene *mut = gmo_get_mutogene (element);
 
   g_message ("Changing state to %s. Will count it as number %d",
       gst_element_state_get_name (GST_STATE_TRANSITION_NEXT (transition)),
@@ -109,7 +109,7 @@ gmo_override_change_state (GstElement * element, GstStateChange transition)
 static void
 gmo_class_init (gpointer dna, gpointer class_data)
 {
-  MutatorClass *klass;
+  MutogeneClass *klass;
   GstElementClass *element_class = (GstElementClass *) dna;
 
   parent_class = g_type_class_peek_parent (dna);
@@ -123,9 +123,9 @@ gmo_class_init (gpointer dna, gpointer class_data)
 static void
 gmo_init (GTypeInstance * dna, gpointer klass)
 {
-  Mutator *mut;
+  Mutogene *mut;
 
-  mut = gmo_get_mutator (dna);
+  mut = gmo_get_mutogene (dna);
   mut->num = 0;
 
   g_message ("Hello from %s, the child of %s", G_OBJECT_CLASS_NAME (klass),
@@ -148,8 +148,8 @@ gmo_get_mutant_type (GType dna)
 
   return (ret = g_type_register_static_simple
       (dna, "MyMutantType",
-          dna_info.class_size + sizeof (MutatorClass),
-          gmo_class_init, dna_info.instance_size + sizeof (Mutator), gmo_init,
+          dna_info.class_size + sizeof (MutogeneClass),
+          gmo_class_init, dna_info.instance_size + sizeof (Mutogene), gmo_init,
           /* Definitelly not an abstract type. Maybe next time.. */
           0));
 }
