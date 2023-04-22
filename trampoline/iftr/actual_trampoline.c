@@ -23,8 +23,8 @@
 static IFTR_backend
 iftr_get_backend (void)
 {
-  /* TODO */
-  return AVX;
+  /* TODO: set DEBUG on env var set */
+  return iftr_select_backend ();
 }
 
 void *

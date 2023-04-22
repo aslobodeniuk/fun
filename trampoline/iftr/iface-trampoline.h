@@ -69,4 +69,6 @@ typedef struct
 
 #define IFTR_GET_IFACE(type) iftr_get_iface_##type ()
 
+IFTR_backend
+iftr_select_backend (void);
 void *iftr_get_iface (const ItrmpIfaceMap * ifaces);

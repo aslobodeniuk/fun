@@ -24,7 +24,7 @@ foreach b : all_backends
 endforeach
 
 actual_trampoline = static_library('iftr',
-                                   sources: files('actual_trampoline.c'),
+                                   sources: files(['actual_trampoline.c', 'cpu-detect.c']),
                                    include_directories : [],
                                    c_args: [],
                                    dependencies: [],
