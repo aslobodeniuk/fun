@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird</title>
+    <style>
+      body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+      canvas { background-color: skyblue; display: block; width: 100vw; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // Game of Life settings
+      const gridSize = 50; // Size of each cell (square)
+      const rows = Math.floor(canvas.height / gridSize);
+      const cols = Math.floor(canvas.width / gridSize);
+      let grid = Array(rows).fill().map(() => Array(cols).fill(0));
+
+      function initializeGrid() {
+	  for (let i = 0; i < rows; i++) {
+              for (let j = 0; j < cols; j++) {
+		  grid[i][j] = Math.random() > 0.8 ? 1 : 0; // Random initial state
+              }
+	  }
+      }
+
+      function updateGrid() {
+	  let newGrid = grid.map(arr => arr.slice());
+
+	  for (let i = 0; i < rows; i++) {
+              for (let j = 0; j < cols; j++) {
+		  let neighbors = 0;
+
+		  // Count live neighbors
+		  for (let x = -1; x <= 1; x++) {
+                      for (let y = -1; y <= 1; y++) {
+			  if (x === 0 && y === 0) continue; // Skip the current cell
+			  let ni = (i + x + rows) % rows;
+			  let nj = (j + y + cols) % cols;
+			  neighbors += grid[ni][nj];
+                      }
+		  }
+
+		  // Game of Life rules
+		  if (grid[i][j] === 1 && (neighbors < 2 || neighbors > 3)) {
+                      newGrid[i][j] = 0;
+		  } else if (grid[i][j] === 0 && neighbors === 3) {
+                      newGrid[i][j] = 1;
+		  }
+              }
+	  }
+
+	  grid = newGrid;
+      }
+
+      function drawGrid(rotationAngle) {
+	  ctx.save();
+	  ctx.translate(canvas.width / 2, canvas.height / 2);
+	  ctx.rotate(rotationAngle);
+	  ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+	  for (let i = 0; i < rows; i++) {
+              for (let j = 0; j < cols; j++) {
+		  if (grid[i][j] === 1) {
+                      ctx.fillStyle = "white";
+                      ctx.fillRect(j * gridSize, i * gridSize, gridSize, gridSize);
+		  }
+              }
+	  }
+	  ctx.restore();
+      }
+
+      // Animation loop for both the game and the spinning clouds
+      let angle = 0; // Rotation angle for the background
+      let birdImg = new Image();
+      birdImg.src = "bird_sprite.png"; // Update with actual sprite path
+
+      let bird = { x: 50, y: canvas.height / 2, width: 250, height: 175, gravity: 0.6, lift: -3, velocity: 0, horizontalVelocity: 0 };
+      let pipes = [];
+      let frame = 0;
+      let gameRunning = true;
+
+      function drawBird() {
+	  ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+      }
+
+      function drawPipes() {
+	  ctx.fillStyle = "green";
+	  pipes.forEach(pipe => {
+              ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+              ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+	  });
+      }
+
+      function updateBird() {
+	  bird.velocity += bird.gravity;
+	  bird.y += bird.velocity;
+	  bird.x += bird.horizontalVelocity; // Move the bird forward
+
+	  if (bird.y + bird.height > canvas.height) gameOver();
+      }
+
+      function updatePipes() {
+	  if (frame % 150 === 0) {
+              let gap = 600;  // Adjust gap between pipes
+              let topHeight = Math.random() * (canvas.height - gap - 100) + 50; // Ensure top height stays within bounds
+              pipes.push({ 
+		  x: canvas.width, 
+		  width: 300, 
+		  top: topHeight, 
+		  bottom: topHeight + gap 
+              });
+	  }
+
+	  pipes.forEach(pipe => pipe.x -= 25); // Speed up pipe movement
+
+	  // Remove pipes that are off-screen
+	  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0); 
+      }
+
+      
+      function detectCollision() {
+	  pipes.forEach(pipe => {
+              if (bird.x < pipe.x + pipe.width && bird.x + bird.width > pipe.x) {
+		  if (bird.y < pipe.top || bird.y + bird.height > pipe.bottom) {
+                      gameOver();
+		  }
+              }
+	  });
+      }
+
+      function gameOver() {
+	  gameRunning = false;
+	  // Dark red background and GAME OVER message
+	  ctx.fillStyle = "darkred";
+	  ctx.fillRect(0, 0, canvas.width, canvas.height); // Dark red background
+
+	  ctx.fillStyle = "white";
+	  ctx.font = "80px Arial"; // Big font size
+	  ctx.textAlign = "center";
+	  ctx.textBaseline = "middle";
+	  ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2); // Center the text
+      }
+
+      function gameLoop() {
+	  if (!gameRunning) return;
+
+	  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	  // Update and draw the Game of Life grid (rotate it)
+	  updateGrid();
+	  drawGrid(angle);
+
+	  // Game elements
+	  drawBird();
+	  drawPipes();
+	  updateBird();
+	  updatePipes();
+	  detectCollision();
+
+	  // Increase rotation angle for spinning effect
+	  angle += 0.01;
+
+	  frame++;
+	  requestAnimationFrame(gameLoop);
+      }
+
+      document.addEventListener("keydown", () => { bird.velocity = bird.lift * 6; });
+      window.addEventListener("resize", () => {
+	  canvas.width = window.innerWidth;
+	  canvas.height = window.innerHeight;
+	  // Recalculate grid dimensions based on new size
+	  rows = Math.floor(canvas.height / gridSize);
+	  cols = Math.floor(canvas.width / gridSize);
+	  grid = Array(rows).fill().map(() => Array(cols).fill(0));
+	  initializeGrid(); // Reinitialize grid on resize
+      });
+
+      initializeGrid(); // Initialize the grid
+      gameLoop(); // Start the game loop
+    </script>
+  </body>
+</html>
