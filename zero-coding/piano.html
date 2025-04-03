@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple JS Piano</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; }
+    .piano { display: flex; gap: 10px; }
+    .key {
+      width: 60px; height: 200px;
+      background: white; border: 2px solid black;
+      box-shadow: 2px 2px 5px #000;
+      cursor: pointer; user-select: none;
+      font-weight: bold; text-align: center;
+      line-height: 200px;
+    }
+    .key:active { background: #ccc; }
+  </style>
+</head>
+<body>
+  <div class="piano">
+    <div class="key" data-note="261.63">C</div>
+    <div class="key" data-note="293.66">D</div>
+    <div class="key" data-note="329.63">E</div>
+    <div class="key" data-note="349.23">F</div>
+    <div class="key" data-note="392.00">G</div>
+    <div class="key" data-note="440.00">A</div>
+    <div class="key" data-note="493.88">B</div>
+    <div class="key" data-note="523.25">C</div>
+  </div>
+
+  <script>
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    document.querySelectorAll('.key').forEach(key => {
+      key.addEventListener('mousedown', () => {
+        const frequency = parseFloat(key.dataset.note);
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine'; // Try 'square', 'sawtooth', or 'triangle' too!
+        oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        oscillator.start();
+
+        // Stop sound after 0.5 seconds
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      });
+    });
+  </script>
+</body>
+</html>
